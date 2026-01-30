@@ -4,3 +4,6 @@ category-api-ss2
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Documentation (local only)
+docs/
