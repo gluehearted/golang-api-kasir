@@ -1,0 +1,70 @@
+### API test pakai REST Client VS Code Extension
+### Harus sudah jalan server di localhost:8080
+### Klik "Send Request" di atas setiap request
+
+@baseUrl = http://localhost:8080
+
+### Health Check
+GET {{baseUrl}}/health
+
+#categories
+
+### GET All Categories
+GET {{baseUrl}}/api/categories
+
+### GET Category by ID
+GET {{baseUrl}}/api/categories/1
+
+### POST Create Category
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+
+{
+    "name": "Elektronik",
+    "description": "Kategori untuk barang elektronik"
+}
+
+### PUT Update Category
+PUT {{baseUrl}}/api/categories/1
+Content-Type: application/json
+
+{
+    "name": "Makanan Updated",
+    "description": "Kategori makanan yang sudah diupdate"
+}
+
+### DELETE Category
+DELETE {{baseUrl}}/api/categories/4
+
+#products
+
+### GET All Products
+GET {{baseUrl}}/api/produk
+
+### GET Product by ID (dengan category_name dari JOIN)
+GET {{baseUrl}}/api/produk/1
+
+### POST Create Product (dengan category_id)
+POST {{baseUrl}}/api/produk
+Content-Type: application/json
+
+{
+    "name": "Ayam Panggang",
+    "price": 30000,
+    "stock": 50,
+    "category_id": 1
+}
+
+### PUT Update Product
+PUT {{baseUrl}}/api/produk/1
+Content-Type: application/json
+
+{
+    "name": "Nasi Goreng Spesial",
+    "price": 18000,
+    "stock": 45,
+    "category_id": 1
+}
+
+### DELETE Product
+DELETE {{baseUrl}}/api/produk/5
