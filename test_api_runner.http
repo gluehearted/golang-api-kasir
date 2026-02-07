@@ -15,7 +15,25 @@ GET {{baseUrl}}/api/categories
 ### GET Category by ID
 GET {{baseUrl}}/api/categories/1
 
-### POST Create Category
+### POST Create Category - Makanan
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+
+{
+    "name": "Makanan",
+    "description": "Kategori makanan dan nasi"
+}
+
+### POST Create Category - Minuman
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+
+{
+    "name": "Minuman",
+    "description": "Kategori minuman dan beverage"
+}
+
+### POST Create Category - Elektronik
 POST {{baseUrl}}/api/categories
 Content-Type: application/json
 
@@ -29,30 +47,66 @@ PUT {{baseUrl}}/api/categories/1
 Content-Type: application/json
 
 {
-    "name": "Makanan Updated",
-    "description": "Kategori makanan yang sudah diupdate"
+    "name": "Makanan & Snack",
+    "description": "Kategori makanan, nasi dan snack yang sudah diupdate"
 }
 
-### DELETE Category
+### DELETE Category by ID
 DELETE {{baseUrl}}/api/categories/4
 
-#products
+### PRODUCT MANAGEMENT
 
 ### GET All Products
 GET {{baseUrl}}/api/produk
 
-### GET Product by ID (dengan category_name dari JOIN)
+### GET All Products - Filter by Name
+GET {{baseUrl}}/api/produk?name=ayam
+
+### GET Product by ID
 GET {{baseUrl}}/api/produk/1
 
-### POST Create Product (dengan category_id)
+### POST Create Product - Mie Ayam
+POST {{baseUrl}}/api/produk
+Content-Type: application/json
+
+{
+    "name": "Mie Ayam",
+    "price": 15000,
+    "stock": 50,
+    "category_id": 1
+}
+
+### POST Create Product - Nasi Goreng
+POST {{baseUrl}}/api/produk
+Content-Type: application/json
+
+{
+    "name": "Nasi Goreng",
+    "price": 18000,
+    "stock": 40,
+    "category_id": 1
+}
+
+### POST Create Product - Ayam Panggang
 POST {{baseUrl}}/api/produk
 Content-Type: application/json
 
 {
     "name": "Ayam Panggang",
     "price": 30000,
-    "stock": 50,
+    "stock": 25,
     "category_id": 1
+}
+
+### POST Create Product - Teh Manis
+POST {{baseUrl}}/api/produk
+Content-Type: application/json
+
+{
+    "name": "Teh Manis",
+    "price": 5000,
+    "stock": 100,
+    "category_id": 2
 }
 
 ### PUT Update Product
@@ -60,11 +114,103 @@ PUT {{baseUrl}}/api/produk/1
 Content-Type: application/json
 
 {
-    "name": "Nasi Goreng Spesial",
+    "name": "Mie Ayam Spesial",
     "price": 18000,
     "stock": 45,
     "category_id": 1
 }
 
-### DELETE Product
+### DELETE Product by ID
 DELETE {{baseUrl}}/api/produk/5
+
+### TRANSACTION / CHECKOUT
+
+### POST Checkout - Single Item
+POST {{baseUrl}}/api/checkout
+Content-Type: application/json
+
+{
+    "items": [
+        {
+            "product_id": 1,
+            "quantity": 2
+        }
+    ]
+}
+
+### POST Checkout - Multiple Items
+POST {{baseUrl}}/api/checkout
+Content-Type: application/json
+
+{
+    "items": [
+        {
+            "product_id": 1,
+            "quantity": 2
+        },
+        {
+            "product_id": 2,
+            "quantity": 1
+        },
+        {
+            "product_id": 4,
+            "quantity": 3
+        }
+    ]
+}
+
+### POST Checkout - Bulk Order
+POST {{baseUrl}}/api/checkout
+Content-Type: application/json
+
+{
+    "items": [
+        {
+            "product_id": 3,
+            "quantity": 5
+        },
+        {
+            "product_id": 4,
+            "quantity": 10
+        }
+    ]
+}
+
+### SALES REPORT
+
+### GET Daily Sales Report - Today's Summary
+GET {{baseUrl}}/api/report/hari-ini
+
+### GET Sales Report - Date Range (Example: Jan 1 to Feb 28, 2026)
+GET {{baseUrl}}/api/report?start_date=2026-01-01&end_date=2026-02-28
+
+### GET Sales Report - Last 7 Days
+GET {{baseUrl}}/api/report?start_date=2026-01-31&end_date=2026-02-07
+
+### GET Sales Report - Custom Range (Jan 15 to Jan 31)
+GET {{baseUrl}}/api/report?start_date=2026-01-15&end_date=2026-01-31
+
+
+### ERROR HANDLING TEST
+
+### Test Invalid Category ID
+GET {{baseUrl}}/api/categories/9999
+
+### Test Invalid Product ID
+GET {{baseUrl}}/api/produk/9999
+
+### Test Invalid Date Format
+GET {{baseUrl}}/api/report?start_date=01-01-2026&end_date=28-02-2026
+
+### Test Missing Required Fields - Invalid Checkout
+POST {{baseUrl}}/api/checkout
+Content-Type: application/json
+
+{
+    "items": []
+}
+### NOTES:
+### - Product prices dalam IDR (Rupiah)
+### - Stock akan otomatis berkurang saat checkout
+### - Report menampilkan total_revenue, total_transaksi, dan produk_terlaris
+### - Semua response dalam format JSO

@@ -1,5 +1,7 @@
 package database
 
+// database menangani koneksi dan setup database PostgreSQL
+
 import (
 	"database/sql"
 	"log"
@@ -7,20 +9,18 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
+// InitDB membuka koneksi ke PostgreSQL dengan optimasi connection pool
 func InitDB(connectionString string) (*sql.DB, error) {
-	// Open database with pgx driver
 	db, err := sql.Open("pgx", connectionString)
 	if err != nil {
 		return nil, err
 	}
 
-	// Test connection
-	err = db.Ping()
-	if err != nil {
+	if err = db.Ping(); err != nil {
 		return nil, err
 	}
 
-	// Set connection pool settings (optional tapi recommended)
+	// Setup connection pool: max 25 open, 5 idle
 	db.SetMaxOpenConns(25)
 	db.SetMaxIdleConns(5)
 

@@ -1,5 +1,7 @@
 package handlers
 
+// handlers menangani HTTP requests dan responses dari client
+
 import (
 	"category-api-ss2/models"
 	"category-api-ss2/services"
@@ -9,15 +11,17 @@ import (
 	"strings"
 )
 
+// CategoryHandler menangani HTTP requests untuk kategori
 type CategoryHandler struct {
 	service *services.CategoryService
 }
 
+// NewCategoryHandler membuat CategoryHandler dengan injected service
 func NewCategoryHandler(service *services.CategoryService) *CategoryHandler {
 	return &CategoryHandler{service: service}
 }
 
-// HandleCategories - GET /api/categories, POST /api/categories
+// HandleCategories menangani GET/POST ke /api/categories
 func (h *CategoryHandler) HandleCategories(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -29,6 +33,7 @@ func (h *CategoryHandler) HandleCategories(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// GetAll mengambil semua kategori
 func (h *CategoryHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	categories, err := h.service.GetAll()
 	if err != nil {
@@ -40,6 +45,7 @@ func (h *CategoryHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(categories)
 }
 
+// Create membuat kategori baru dari request body JSON
 func (h *CategoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var category models.Category
 	err := json.NewDecoder(r.Body).Decode(&category)
@@ -59,7 +65,7 @@ func (h *CategoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(category)
 }
 
-// HandleCategoryByID - GET/PUT/DELETE /api/categories/{id}
+// HandleCategoryByID menangani GET/PUT/DELETE ke /api/categories/{id}
 func (h *CategoryHandler) HandleCategoryByID(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -73,9 +79,10 @@ func (h *CategoryHandler) HandleCategoryByID(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-// GetByID - GET /api/categories/{id}
+// GetByID mengambil kategori berdasarkan ID dari URL path
 func (h *CategoryHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/categories/")
+
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, "Invalid category ID", http.StatusBadRequest)
@@ -92,6 +99,7 @@ func (h *CategoryHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(category)
 }
 
+// Update memperbarui kategori berdasarkan ID
 func (h *CategoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/categories/")
 	id, err := strconv.Atoi(idStr)
@@ -108,6 +116,7 @@ func (h *CategoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	category.ID = id
+
 	err = h.service.Update(&category)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -118,7 +127,7 @@ func (h *CategoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(category)
 }
 
-// Delete - DELETE /api/categories/{id}
+// Delete menghapus kategori berdasarkan ID
 func (h *CategoryHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/categories/")
 	id, err := strconv.Atoi(idStr)
