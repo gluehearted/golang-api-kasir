@@ -6,76 +6,53 @@ import (
 	"fmt"
 )
 
-// TransactionRepository struct menyimpan reference ke database connection
+// TransactionRepository menangani operasi database untuk transaksi
 type TransactionRepository struct {
 	db *sql.DB
 }
 
+// NewTransactionRepository membuat TransactionRepository dengan injected database connection
 func NewTransactionRepository(db *sql.DB) *TransactionRepository {
 	return &TransactionRepository{db: db}
 }
 
-// CreateTransaction membuat transaksi baru dengan atomic operation
-// Validasi produk, hitung harga, update stok, dan insert record
-
-//   - Fetch product details (name, price, stock)
-//   - Validate: produk harus ada
-//   - Calculate subtotal: price * quantity
-//   - UPDATE product stock: stock - quantity
-//   - Add ke details slice
-
-// 3. INSERT transaction record (dengan total_amount)
-// 4. LOOP untuk insert setiap transaction_detail
-// 5. COMMIT transaction - jika semua sukses
-// 6. ROLLBACK jika ada error di tengah jalan (via defer)
-
-// ERROR HANDLING
-// Jika ada error di tengah proses (contoh: produk tidak ada, stock tidak cukup):
-// - Defer rollback akan otomatis merollback semua changes
-// - Return error ke caller
-// - Database state tidak berubah (atomic)
+// CreateTransaction membuat transaksi baru dengan atomic database operation
 func (repo *TransactionRepository) CreateTransaction(items []models.CheckoutItem) (*models.Transaction, error) {
-	// BEGIN transaction - mulai atomic operation
-	// Ini memastikan semua database operations succeed atau semua rollback
+	// Begin atomic transaction
 	tx, err := repo.db.Begin()
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback() // Defer rollback jika ada error
+	defer tx.Rollback()
 
-	// VALIDATE & CALCULATE
+	// Validate products dan calculate totals
 	totalAmount := 0
 	details := make([]models.TransactionDetail, 0)
 
-	// Loop untuk setiap item yang dibeli
 	for _, item := range items {
-		var productPrice, stock int
+		var productPrice int
 		var productName string
 
-		// Fetch product details dari database
-		// Menggunakan tx (transaction) bukan repo.db untuk atomicity
-		err := tx.QueryRow("SELECT name, price, stock FROM products WHERE id = $1", item.ProductID).Scan(&productName, &productPrice, &stock)
+		// Fetch product details
+		err := tx.QueryRow("SELECT name, price FROM products WHERE id = $1", item.ProductID).Scan(&productName, &productPrice)
 		if err == sql.ErrNoRows {
-			// Produk tidak ditemukan - return error
 			return nil, fmt.Errorf("product id %d not found", item.ProductID)
 		}
 		if err != nil {
-			// Other database errors
 			return nil, err
 		}
 
-		// Calculate subtotal: harga x jumlah
+		// Calculate subtotal dan update total
 		subtotal := productPrice * item.Quantity
 		totalAmount += subtotal
 
-		// UPDATE product stock - kurangi stok karena terjual
-		// Menggunakan tx untuk consistency dalam transaction
+		// Update product stock
 		_, err = tx.Exec("UPDATE products SET stock = stock - $1 WHERE id = $2", item.Quantity, item.ProductID)
 		if err != nil {
 			return nil, err
 		}
 
-		// Append detail ke details slice
+		// Add to details
 		details = append(details, models.TransactionDetail{
 			ProductID:   item.ProductID,
 			ProductName: productName,
@@ -84,8 +61,7 @@ func (repo *TransactionRepository) CreateTransaction(items []models.CheckoutItem
 		})
 	}
 
-	// INSERT TRANSACTION RECORD
-	// Insert transaksi utama dan dapatkan ID yang di-generate
+	// Insert transaction record
 	var transactionID int
 	err = tx.QueryRow("INSERT INTO transactions (total_amount) VALUES ($1) RETURNING id", totalAmount).Scan(&transactionID)
 	if err != nil {
@@ -93,28 +69,32 @@ func (repo *TransactionRepository) CreateTransaction(items []models.CheckoutItem
 	}
 
 	// INSERT TRANSACTION DETAILS
-	// Loop untuk insert detail transaksi untuk setiap item
-	for i := range details {
-		// Set transaction_id yang baru di-generate
-		details[i].TransactionID = transactionID
+	if len(details) > 0 {
+		query := "INSERT INTO transaction_details (transaction_id, product_id, quantity, subtotal) VALUES "
+		args := []interface{}{}
 
-		// Insert transaction_detail record
-		_, err = tx.Exec("INSERT INTO transaction_details (transaction_id, product_id, quantity, subtotal) VALUES ($1, $2, $3, $4)",
-			transactionID, details[i].ProductID, details[i].Quantity, details[i].Subtotal)
+		for i, detail := range details {
+			if i > 0 {
+				query += ", "
+			}
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d)", i*4+1, i*4+2, i*4+3, i*4+4)
+			args = append(args, transactionID, detail.ProductID, detail.Quantity, detail.Subtotal)
+			detail.TransactionID = transactionID
+			details[i] = detail
+		}
+
+		_, err = tx.Exec(query, args...)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	// COMMIT
-	// Jika semua berhasil, commit transaction
-	// Ini akan membuat semua changes permanent
+	// Commit transaction
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 
-	// RETURN RESULT
-	// Return Transaction object dengan semua details
+	// Return transaction with all details
 	return &models.Transaction{
 		ID:          transactionID,
 		TotalAmount: totalAmount,
